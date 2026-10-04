@@ -81,7 +81,8 @@ El esquema (`01_esquema_empresas.sql`, mencionado en el README) **no está en el
 - Los handlers devuelven objetos planos o `Response` y siempre van envueltos en `manejar`.
 - Marca: logo en `public/coco-palabra.svg` (navegación) y favicon en `app/icon.svg`. Los colores salen del logo y
   viven como variables en `app/globals.css`: azul marino `--marca` `#12355b`, grafito `--tinta` `#2b2f33`.
-  Formas redondas: botones y chips en píldora, tarjetas con `--radio`. El ámbar queda solo para "por identificar"
+  Tipografía Outfit (`@fontsource/outfit`), geométrica como el logo; las cifras solo se alinean en columna donde
+  el CSS pone `font-variant-numeric: tabular-nums`. Formas redondas: botones y chips en píldora, tarjetas con `--radio`. El ámbar queda solo para "por identificar"
   y el rojo para errores.
 - Responsive: en `app/globals.css`, bajo 720px las tablas con clase `tarjetas` se muestran como tarjetas y cada
   `<td>` toma su encabezado de `data-label`. Una tabla nueva debe llevar ambas cosas.
