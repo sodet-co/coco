@@ -6,6 +6,8 @@ import Navegacion from '@/components/Navegacion.jsx';
 
 export const metadata = { title: 'coco · Recibos de caja', description: 'Plantillas de carga para WorldOffice desde extractos bancarios' };
 
+export const viewport = { themeColor: '#12355b' };
+
 export default function RootLayout({ children }) {
   return (
     <html lang="es">

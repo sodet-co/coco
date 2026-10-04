@@ -1,7 +1,7 @@
 import { contextoEmpresa } from '@/lib/datos.js';
 import { leerExtractoBancolombia, ErrorExtracto } from '@/lib/extracto/bancolombia.js';
 import { proponerRecibos } from '@/lib/motor.js';
-import { nombreHoja } from '@/lib/plantilla.js';
+import { nombreHoja } from '@/lib/hojas.js';
 import { manejar } from '@/lib/api.js';
 
 export const runtime = 'nodejs';

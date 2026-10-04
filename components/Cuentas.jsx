@@ -25,13 +25,13 @@ export default function Cuentas({ empresaId, cuentas, recargar }) {
       <h2>Cuentas bancarias</h2>
       <p className="ayuda">El sistema reconoce cada extracto por el número de cuenta impreso en el PDF. La cuenta contable es la que va en el débito del recibo.</p>
       <div className="tabla-envoltura">
-        <table>
+        <table className="tarjetas">
           <thead><tr><th>Banco</th><th>Tipo</th><th>Número</th><th>Cuenta contable</th><th></th></tr></thead>
           <tbody>
             {cuentas.length === 0 && <tr><td colSpan={5} className="vacio">Sin cuentas. Agrega la primera abajo.</td></tr>}
             {cuentas.map((c) => (
               <tr key={c.id}>
-                <td>{c.banco}</td><td>{c.tipo}</td><td className="fecha">{c.numero}</td><td className="fecha">{c.cta_contable}</td>
+                <td data-label="Banco">{c.banco}</td><td data-label="Tipo">{c.tipo}</td><td data-label="Número" className="fecha">{c.numero}</td><td data-label="Cuenta contable" className="fecha">{c.cta_contable}</td>
                 <td className="derecha"><button type="button" className="enlace peligro" onClick={() => borrar(c)}>Quitar</button></td>
               </tr>
             ))}

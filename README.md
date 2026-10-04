@@ -1,7 +1,8 @@
 # coco · Recibos de caja para WorldOffice
 
-Lee el extracto PDF de Bancolombia (lo abre con el NIT de la empresa), propone el tercero
-de cada abono y genera el Excel de carga de Recibos de Caja para WorldOffice.
+Se elige la empresa y se suben uno o varios extractos PDF de Bancolombia (los abre con el NIT de la empresa).
+Propone el tercero de cada abono y genera un Excel de carga de Recibos de Caja para WorldOffice con una hoja
+por extracto. Funciona en computador y en celular.
 
 ## Puesta en marcha (Windows / PowerShell)
 
@@ -16,7 +17,8 @@ La base debe tener el esquema de `01_esquema_empresas.sql`.
 
 - `lib/extracto/bancolombia.js`: lector del PDF y validación de saldos contra el resumen del banco
 - `lib/motor.js`: reglas, coincidencia de terceros y alias, cuenta y nota por recibo
-- `lib/plantilla.js`: arma el Excel de 47 columnas (débitos primero, luego créditos)
+- `lib/plantilla.js`: arma el Excel, una hoja de 47 columnas por extracto (débitos primero, luego créditos)
+- `lib/hojas.js`: nombres de las hojas (`RC_Marzo2026`; si hay dos cuentas del mismo mes, `RC_Marzo2026_4471`)
 - `lib/datos.js`: consultas a Postgres
 - `app/api/*`: empresas, extracto, terceros, plantilla
 - `components/Generador.jsx`: pantalla de revisión

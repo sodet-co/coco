@@ -8,7 +8,7 @@ export default function Navegacion() {
   return (
     <nav className="nav">
       <div className="nav-interior">
-        <span className="marca">coco</span>
+        <Link href="/" className="marca"><img src="/coco-palabra.svg" alt="coco" width="86" height="26" /></Link>
         <Link href="/" className={activo('/') ? 'activo' : ''}>Recibos de caja</Link>
         <Link href="/empresas" className={activo('/empresas') ? 'activo' : ''}>Empresas</Link>
       </div>

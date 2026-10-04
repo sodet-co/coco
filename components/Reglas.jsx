@@ -25,16 +25,16 @@ export default function Reglas({ empresaId, reglas, recargar }) {
       <h2>Reglas especiales</h2>
       <p className="ayuda">Se aplican a los abonos cuya descripción en el extracto empieza con el texto indicado, antes de buscar el tercero. Primero se evalúa la de menor prioridad.</p>
       <div className="tabla-envoltura">
-        <table>
+        <table className="tarjetas">
           <thead><tr><th>Si la descripción empieza con</th><th>Entonces</th><th>NIT</th><th>Cuenta</th><th>Nota</th><th className="num">Prioridad</th><th></th></tr></thead>
           <tbody>
             {reglas.length === 0 && <tr><td colSpan={7} className="vacio">Sin reglas.</td></tr>}
             {reglas.map((r) => (
               <tr key={r.id}>
                 <td className="desc">{r.patron}</td>
-                <td>{r.accion === 'excluir' ? 'No va al RC' : 'Asignar'}</td>
-                <td className="fecha">{r.nit || ''}</td><td className="fecha">{r.cta_contable || ''}</td><td>{r.nota || ''}</td>
-                <td className="num">{r.prioridad}</td>
+                <td data-label="Entonces">{r.accion === 'excluir' ? 'No va al RC' : 'Asignar'}</td>
+                <td data-label="NIT" className="fecha">{r.nit || ''}</td><td data-label="Cuenta" className="fecha">{r.cta_contable || ''}</td><td data-label="Nota">{r.nota || ''}</td>
+                <td data-label="Prioridad" className="num">{r.prioridad}</td>
                 <td className="derecha"><button type="button" className="enlace peligro" onClick={() => borrar(r)}>Borrar</button></td>
               </tr>
             ))}

@@ -30,9 +30,9 @@ function FilaTercero({ t, recargar, setError }) {
   if (editando) {
     return (
       <tr className="editando">
-        <td><input value={datos.nombre} onChange={(e) => setDatos({ ...datos, nombre: e.target.value })} /></td>
-        <td><input className="medio" value={datos.nit} inputMode="numeric" onChange={(e) => setDatos({ ...datos, nit: limpiarNit(e.target.value) })} /></td>
-        <td><input className="medio" value={datos.nit_alt} inputMode="numeric" onChange={(e) => setDatos({ ...datos, nit_alt: limpiarNit(e.target.value) })} /></td>
+        <td data-label="Nombre"><input value={datos.nombre} onChange={(e) => setDatos({ ...datos, nombre: e.target.value })} /></td>
+        <td data-label="NIT"><input className="medio" value={datos.nit} inputMode="numeric" onChange={(e) => setDatos({ ...datos, nit: limpiarNit(e.target.value) })} /></td>
+        <td data-label="NIT alterno"><input className="medio" value={datos.nit_alt} inputMode="numeric" onChange={(e) => setDatos({ ...datos, nit_alt: limpiarNit(e.target.value) })} /></td>
         <td></td>
         <td className="derecha nowrap">
           <button type="button" className="enlace" onClick={guardar}>Guardar</button>{' '}
@@ -44,9 +44,9 @@ function FilaTercero({ t, recargar, setError }) {
   return (
     <tr>
       <td className="desc">{t.nombre}</td>
-      <td className="fecha">{t.nit}</td>
-      <td className="fecha">{t.nit_alt || ''}</td>
-      <td>
+      <td data-label="NIT" className="fecha">{t.nit}</td>
+      <td data-label="NIT alterno" className="fecha">{t.nit_alt || ''}</td>
+      <td data-label="Alias del banco" className="apilado">
         <div className="chips">
           {t.alias.map((a) => (
             <span key={a.id} className="chip">{a.alias}
@@ -107,7 +107,7 @@ export default function Terceros({ empresaId, terceros, recargar }) {
       {error && <p className="txt-error">{error}</p>}
 
       <div className="tabla-envoltura">
-        <table>
+        <table className="tarjetas">
           <thead><tr><th>Nombre</th><th>NIT</th><th>NIT alterno</th><th>Alias del banco</th><th></th></tr></thead>
           <tbody>
             {filtrados.length === 0 && <tr><td colSpan={5} className="vacio">{terceros.length ? 'Ningún tercero coincide con la búsqueda.' : 'Sin terceros. Agrégalos a mano o impórtalos desde Excel.'}</td></tr>}

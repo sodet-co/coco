@@ -5,7 +5,7 @@ export default function Inicio() {
     <main className="pagina">
       <header className="cabecera">
         <h1>Recibos de caja para WorldOffice</h1>
-        <p>Sube el extracto del banco, revisa a quién corresponde cada abono y descarga la plantilla lista para cargar.</p>
+        <p>Elige la empresa, sube sus extractos del banco, revisa a quién corresponde cada abono y descarga un Excel con una hoja por extracto, listo para cargar.</p>
       </header>
       <Generador />
     </main>
