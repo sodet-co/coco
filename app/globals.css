@@ -111,6 +111,17 @@ input.nota { width: 180px; }
 .nav a:not(.marca) { color: var(--tenue); text-decoration: none; padding: 7px 14px; border-radius: 999px; font-weight: 500; white-space: nowrap; transition: background .15s, color .15s; }
 .nav a:not(.marca):hover { color: var(--marca); background: var(--papel); }
 .nav a.activo, .nav a.activo:hover { color: var(--marca); background: var(--marca-claro); }
+.salir { margin-left: auto; }
+.salir button { padding: 6px 16px; }
+
+/* Entrada */
+.acceso { display: flex; justify-content: center; padding-top: 72px; }
+.acceso-tarjeta { width: 100%; max-width: 380px; display: grid; gap: 16px; background: var(--blanco); border: 1px solid var(--linea);
+  border-radius: var(--radio); padding: 28px; box-shadow: var(--sombra); }
+.acceso-tarjeta h1 { font-size: 24px; font-weight: 600; letter-spacing: -0.02em; margin: 0; }
+.acceso-tarjeta .ayuda { margin: -10px 0 0; }
+.acceso-tarjeta input { width: 100%; }
+.acceso-tarjeta .mensaje { margin: 0; }
 .actualizado { max-width: 1240px; margin: 0 auto; padding: 8px 24px 28px; color: var(--tenue); font-size: 12.5px; }
 
 a { color: var(--marca); }
@@ -168,6 +179,9 @@ td.falta { color: var(--ambar); font-weight: 600; }
   .marca { margin-right: 10px; }
   .marca img { height: 22px; }
   .nav a:not(.marca) { padding: 7px 11px; font-size: 14px; }
+  .salir button { min-height: 0; padding: 6px 12px; font-size: 14px; }
+  .acceso { padding-top: 32px; }
+  .acceso-tarjeta { padding: 20px; }
 
   /* 16px evita que iOS haga zoom al enfocar un campo; 42px deja los controles cómodos para el dedo */
   input, select { font-size: 16px; min-height: 42px; }

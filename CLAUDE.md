@@ -14,9 +14,20 @@ Repositorio: https://github.com/sodet-co/coco (rama `main`).
 - `npm run dev` (http://localhost:3000), `npm run build`, `npm start`. No hay pruebas ni linter configurados.
 - `DATABASE_URL` va en `.env.local` (ignorado por git; `.env.example` es la plantilla); se obtiene con
   `npx @insforge/cli db connection-string`. `.mcp.json` (MCP de InsForge, con la API key) también está ignorado.
-- Producción: Vercel (https://coco-phi-five.vercel.app), con `DATABASE_URL`, `COCO_USUARIO` y `COCO_CLAVE` en sus
-  variables de entorno. `middleware.js` pide esa clave (autenticación básica) en todo el sitio, páginas y API; en
-  producción sin esas variables responde 503.
+- Producción: Vercel (https://coco-phi-five.vercel.app), con `DATABASE_URL`, `NEXT_PUBLIC_INSFORGE_URL` y
+  `NEXT_PUBLIC_INSFORGE_ANON_KEY` en sus variables de entorno.
+
+## Inicio de sesión
+
+- Usuarios de InsForge Auth (correo y clave). El registro público está cerrado: los usuarios se crean en el panel
+  de InsForge (Authentication → Users). Todo usuario que entra ve todo; no hay roles.
+- `middleware.js` protege todo menos `/login` y los estáticos: renueva la sesión con `updateSession`
+  (`@insforge/sdk/ssr/middleware`) y verifica la firma RS256 del token contra `/.well-known/jwks.json` del proyecto
+  con `jose`, exigiendo `role = authenticated`. Sin sesión, las páginas van a `/login?siguiente=…` y la API responde 401;
+  `api()` de `lib/cliente.js` manda a `/login` ante un 401.
+- Entrar y salir son Server Actions en `app/login/acciones.js` (`createAuthActions`), para que el token de refresco
+  quede en cookie httpOnly. `siguiente` solo acepta rutas internas.
+- coco sigue consultando la base como `postgres` (`lib/db.js`); la sesión solo decide quién entra.
 - Entorno: Windows, PowerShell.
 
 ## Flujo principal
