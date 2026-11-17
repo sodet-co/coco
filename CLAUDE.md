@@ -14,6 +14,9 @@ Repositorio: https://github.com/sodet-co/coco (rama `main`).
 - `npm run dev` (http://localhost:3000), `npm run build`, `npm start`. No hay pruebas ni linter configurados.
 - `DATABASE_URL` va en `.env.local` (ignorado por git; `.env.example` es la plantilla); se obtiene con
   `npx @insforge/cli db connection-string`. `.mcp.json` (MCP de InsForge, con la API key) también está ignorado.
+- Producción: Vercel (https://coco-phi-five.vercel.app), con `DATABASE_URL`, `COCO_USUARIO` y `COCO_CLAVE` en sus
+  variables de entorno. `middleware.js` pide esa clave (autenticación básica) en todo el sitio, páginas y API; en
+  producción sin esas variables responde 503.
 - Entorno: Windows, PowerShell.
 
 ## Flujo principal
