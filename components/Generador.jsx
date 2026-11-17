@@ -3,9 +3,17 @@ import { Fragment, useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/cliente.js';
 import { nombresDeHojas } from '@/lib/hojas.js';
 
+const aMano = (propuestas) => propuestas.map((p) => ({ ...p, asignadoAMano: false }));
 const pesos = (n) => n.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
-function contrapartida(nit, empresa) {
+// Textos y campos de cada documento: los abonos van a recibos de caja y los cargos a comprobantes de egreso
+const DOCUMENTOS = {
+  RC: { titulo: 'Recibos de caja', uno: 'recibo', varios: 'recibos', movimientos: 'abonos', delBanco: 'Abonos del banco', total: 'totalAbonos', prefijo: 'prefijo_rc' },
+  CE: { titulo: 'Comprobantes de egreso', uno: 'egreso', varios: 'egresos', movimientos: 'cargos', delBanco: 'Cargos del banco', total: 'totalCargos', prefijo: 'prefijo_ce' },
+};
+
+function contrapartida(nit, empresa, documento) {
+  if (documento === 'CE') return { cuenta: empresa.cta_proveedores, nota: empresa.nota_proveedores };
   const generico = String(nit) === String(empresa.nit_generico);
   return {
     cuenta: generico ? empresa.cta_por_identificar : empresa.cta_clientes,
@@ -23,10 +31,11 @@ export default function Generador() {
   const [archivos, setArchivos] = useState([]);
   const [vuelta, setVuelta] = useState(0); // cambia para vaciar el selector de archivos
   const [empresa, setEmpresa] = useState(null);
-  const [extractos, setExtractos] = useState([]); // [{ clave, archivo, cuenta, extracto, filas }]
+  const [extractos, setExtractos] = useState([]); // [{ clave, archivo, cuenta, extracto, filas: { RC: [], CE: [] } }]
+  const [documento, setDocumento] = useState('RC'); // el que se está revisando
   const [fallidos, setFallidos] = useState([]); // [{ archivo, error }]
   const [terceros, setTerceros] = useState([]);
-  const [consecutivo, setConsecutivo] = useState('');
+  const [consecutivos, setConsecutivos] = useState({ RC: '', CE: '' });
   const [verExcluidos, setVerExcluidos] = useState(false);
   const [nuevo, setNuevo] = useState(null); // { clave, renglon, nombre, nit }
   const [estado, setEstado] = useState({ cargando: false, progreso: '', error: '', aviso: '' });
@@ -42,7 +51,7 @@ export default function Generador() {
   // Los extractos, terceros y consecutivo son de una sola empresa: al cambiarla se empieza de cero
   function elegirEmpresa(id) {
     setEmpresaId(id);
-    setEmpresa(null); setExtractos([]); setFallidos([]); setTerceros([]); setConsecutivo(''); setNuevo(null);
+    setEmpresa(null); setExtractos([]); setFallidos([]); setTerceros([]); setConsecutivos({ RC: '', CE: '' }); setNuevo(null);
     setArchivos([]); setVuelta((v) => v + 1);
     setEstado({ cargando: false, progreso: '', error: '', aviso: '' });
   }
@@ -62,7 +71,7 @@ export default function Generador() {
         const clave = `${d.cuenta.numero}_${d.extracto.desde}_${d.extracto.hasta}`;
         if (claves.has(clave)) { fallos.push({ archivo: archivo.name, error: 'Ya está cargado un extracto de esa cuenta y ese periodo.' }); continue; }
         claves.add(clave);
-        leidos.push({ clave, archivo: archivo.name, cuenta: d.cuenta, extracto: d.extracto, filas: d.propuestas.map((p) => ({ ...p, asignadoAMano: false })) });
+        leidos.push({ clave, archivo: archivo.name, cuenta: d.cuenta, extracto: d.extracto, filas: { RC: aMano(d.propuestas.RC), CE: aMano(d.propuestas.CE) } });
         ultima = d;
       } catch (e) {
         fallos.push({ archivo: archivo.name, error: e.message });
@@ -71,7 +80,7 @@ export default function Generador() {
     if (ultima) {
       setEmpresa(ultima.empresa);
       setTerceros(ultima.terceros);
-      setConsecutivo((c) => c || String(ultima.consecutivoSugerido));
+      setConsecutivos((c) => ({ RC: c.RC || String(ultima.consecutivoSugerido.RC), CE: c.CE || String(ultima.consecutivoSugerido.CE) }));
     }
     setExtractos((xs) => ordenar([...xs, ...leidos]));
     setFallidos(fallos);
@@ -80,15 +89,19 @@ export default function Generador() {
   }
 
   function quitar(x) {
-    if (!confirm(`¿Quitar el extracto ${x.archivo}? Se pierden los cambios que hiciste en sus recibos.`)) return;
+    if (!confirm(`¿Quitar el extracto ${x.archivo}? Se pierden los cambios que hiciste en sus recibos y egresos.`)) return;
     setExtractos((xs) => xs.filter((y) => y.clave !== x.clave));
     if (nuevo?.clave === x.clave) setNuevo(null);
   }
 
   const cambiar = (clave, renglon, cambios) => setExtractos((xs) => xs.map((x) => (x.clave !== clave ? x
-    : { ...x, filas: x.filas.map((f) => (f.renglon === renglon ? { ...f, ...cambios } : f)) })));
+    : { ...x, filas: { ...x.filas, [documento]: x.filas[documento].map((f) => (f.renglon === renglon ? { ...f, ...cambios } : f)) } })));
 
-  const elegirTercero = (clave, renglon, nit) => cambiar(clave, renglon, { nit, ...contrapartida(nit, empresa), asignadoAMano: true });
+  // En el RC la cuenta y la nota dependen del tercero; en el CE se conservan (un retiro sigue yendo a caja)
+  const elegirTercero = (clave, renglon, nit) => cambiar(clave, renglon,
+    { nit, ...(documento === 'RC' ? contrapartida(nit, empresa, documento) : {}), asignadoAMano: true });
+
+  function verDocumento(d) { setDocumento(d); setNuevo(null); }
 
   async function guardarTercero(ev) {
     ev.preventDefault();
@@ -103,25 +116,30 @@ export default function Generador() {
     }
   }
 
-  // Por extracto: recibos incluidos, hoja que le toca y rango de números de recibo
+  const doc = DOCUMENTOS[documento];
+  const consecutivo = consecutivos[documento];
+
+  // Por extracto y para el documento que se está revisando: movimientos incluidos, hoja que le toca y rango de números
   const secciones = useMemo(() => {
-    const conRecibos = extractos.filter((x) => x.filas.some((f) => f.incluir));
-    const hojas = nombresDeHojas(conRecibos.map((x) => ({ anio: x.extracto.anio, mes: x.extracto.mes, numeroCuenta: x.cuenta.numero })));
+    const conRecibos = extractos.filter((x) => x.filas[documento].some((f) => f.incluir));
+    const hojas = nombresDeHojas(conRecibos.map((x) => ({ anio: x.extracto.anio, mes: x.extracto.mes, numeroCuenta: x.cuenta.numero })), documento);
     let siguiente = Number(consecutivo) || 0;
     return extractos.map((x) => {
-      const incluidas = x.filas.filter((f) => f.incluir);
+      const filas = x.filas[documento];
+      const incluidas = filas.filter((f) => f.incluir);
       const desde = siguiente;
       siguiente += incluidas.length;
       return {
-        ...x, incluidas, desde, hasta: siguiente - 1,
+        ...x, filas, incluidas, desde, hasta: siguiente - 1,
         hoja: incluidas.length ? hojas[conRecibos.indexOf(x)] : null,
         total: incluidas.reduce((s, f) => s + f.valor, 0),
         sinIdentificar: incluidas.filter((f) => String(f.nit) === String(empresa?.nit_generico)).length,
       };
     });
-  }, [extractos, consecutivo, empresa]);
+  }, [extractos, documento, consecutivo, empresa]);
 
   const conHoja = secciones.filter((s) => s.hoja);
+  const incluidosDe = (d) => extractos.reduce((s, x) => s + x.filas[d].filter((f) => f.incluir).length, 0);
   const totales = {
     recibos: secciones.reduce((s, x) => s + x.incluidas.length, 0),
     valor: secciones.reduce((s, x) => s + x.total, 0),
@@ -135,7 +153,7 @@ export default function Generador() {
       const r = await fetch('/api/plantilla', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          empresaId, consecutivoInicial: Number(consecutivo),
+          empresaId, documento, consecutivoInicial: Number(consecutivo),
           extractos: conHoja.map((s) => ({
             cuentaId: s.cuenta.id, anio: s.extracto.anio, mes: s.extracto.mes,
             recibos: s.incluidas.map(({ fecha, nit, nota, cuenta, valor, nombreBanco, asignadoAMano }) => ({ fecha, nit, nota, cuenta, valor, nombreBanco, asignadoAMano })),
@@ -148,7 +166,7 @@ export default function Generador() {
       Object.assign(document.createElement('a'), { href: url, download: nombre }).click();
       URL.revokeObjectURL(url);
       const ultimo = Number(r.headers.get('X-Ultimo-Consecutivo'));
-      setEstado({ cargando: false, progreso: '', error: '', aviso: `Descargaste ${nombre} con ${conHoja.length === 1 ? 'una hoja' : `${conHoja.length} hojas`}. Recibos ${empresa.prefijo_rc} ${consecutivo} a ${ultimo}; la próxima vez arranca en ${ultimo + 1}.` });
+      setEstado({ cargando: false, progreso: '', error: '', aviso: `Descargaste ${nombre} con ${conHoja.length === 1 ? 'una hoja' : `${conHoja.length} hojas`}. ${doc.titulo} ${empresa[doc.prefijo]} ${consecutivo} a ${ultimo}; la próxima vez arranca en ${ultimo + 1}.` });
     } catch (e) {
       setEstado({ cargando: false, progreso: '', error: e.message, aviso: '' });
     }
@@ -183,12 +201,22 @@ export default function Generador() {
       )}
       {estado.aviso && <p className="mensaje ok" role="status">{estado.aviso}</p>}
 
+      {extractos.length > 0 && (
+        <div className="documentos" role="tablist" aria-label="Documento que se revisa">
+          {Object.entries(DOCUMENTOS).map(([d, t]) => (
+            <button key={d} type="button" role="tab" aria-selected={documento === d} className={documento === d ? 'activo' : ''} onClick={() => verDocumento(d)}>
+              {t.titulo} <span className="contador">{incluidosDe(d)}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       {secciones.map((s) => {
         const visibles = verExcluidos ? s.filas : s.incluidas;
         return (
           <section className="extracto" key={s.clave}>
             <header className="extracto-cab">
-              <h2>{s.hoja || 'Sin recibos'}</h2>
+              <h2>{s.hoja || `Sin ${doc.varios}`}</h2>
               <span className="archivo">{s.archivo}</span>
               <button type="button" className="enlace peligro" onClick={() => quitar(s)}>Quitar</button>
             </header>
@@ -196,10 +224,10 @@ export default function Generador() {
             <div className="resumen">
               <div><small>Cuenta</small><strong>{s.cuenta.banco} {s.cuenta.tipo.toLowerCase()} {s.cuenta.numero}</strong></div>
               <div><small>Periodo</small><strong>{s.extracto.desde} a {s.extracto.hasta}</strong></div>
-              <div><small>Abonos del banco</small><strong>${pesos(s.extracto.resumen.totalAbonos)}</strong></div>
-              <div><small>Van al RC</small><strong>{s.incluidas.length} por ${pesos(s.total)}</strong></div>
-              {s.hoja && consecutivo && <div><small>Recibos {empresa.prefijo_rc}</small><strong>{s.desde} a {s.hasta}</strong></div>}
-              <div className={s.sinIdentificar ? 'pendiente' : ''}><small>Sin identificar</small><strong>{s.sinIdentificar}</strong></div>
+              <div><small>{doc.delBanco}</small><strong>${pesos(s.extracto.resumen[doc.total])}</strong></div>
+              <div><small>Van al {documento}</small><strong>{s.incluidas.length} por ${pesos(s.total)}</strong></div>
+              {s.hoja && consecutivo && <div><small>{doc.titulo} {empresa[doc.prefijo]}</small><strong>{s.desde} a {s.hasta}</strong></div>}
+              <div className={s.sinIdentificar && documento === 'RC' ? 'pendiente' : ''}><small>Sin identificar</small><strong>{s.sinIdentificar}</strong></div>
             </div>
 
             {s.extracto.errores.length > 0 && (
@@ -218,16 +246,19 @@ export default function Generador() {
                   </tr>
                 </thead>
                 <tbody>
-                  {visibles.length === 0 && <tr className="entera"><td colSpan={7} className="vacio">Ningún abono de este extracto va al RC; no genera hoja.</td></tr>}
+                  {visibles.length === 0 && <tr className="entera"><td colSpan={7} className="vacio">Ningún movimiento de este extracto va al {documento}; no genera hoja.</td></tr>}
                   {visibles.map((f) => {
                     const sinTercero = f.incluir && String(f.nit) === String(empresa.nit_generico);
+                    // Terceros que no están en la lista: el interno (retiros a caja) y el que haya fijado una regla
+                    const otros = [...new Set([documento === 'CE' && empresa.tercero_interno, f.nit])]
+                      .filter((n) => n && String(n) !== String(empresa.nit_generico) && !terceros.some((t) => t.nit === n));
                     const creando = nuevo?.clave === s.clave && nuevo.renglon === f.renglon;
                     return (
                       <Fragment key={f.renglon}>
-                        <tr className={!f.incluir ? 'excluida' : sinTercero ? 'sin-tercero' : ''}>
-                          <td><input type="checkbox" checked={f.incluir} aria-label="Incluir en el RC"
+                        <tr className={!f.incluir ? 'excluida' : sinTercero && documento === 'RC' ? 'sin-tercero' : ''}>
+                          <td><input type="checkbox" checked={f.incluir} aria-label={`Incluir en el ${documento}`}
                             onChange={(e) => cambiar(s.clave, f.renglon, e.target.checked && !f.nit
-                              ? { incluir: true, nit: empresa.nit_generico, ...contrapartida(empresa.nit_generico, empresa) }
+                              ? { incluir: true, nit: empresa.nit_generico, ...contrapartida(empresa.nit_generico, empresa, documento) }
                               : { incluir: e.target.checked })} /></td>
                           <td className="fecha">{f.fecha}</td>
                           <td>
@@ -240,8 +271,7 @@ export default function Generador() {
                               <div className="tercero">
                                 <select value={f.nit} onChange={(e) => elegirTercero(s.clave, f.renglon, e.target.value)}>
                                   <option value={empresa.nit_generico}>{empresa.nit_generico} · Por identificar</option>
-                                  {f.origen === 'regla' && !terceros.some((t) => t.nit === f.nit) && f.nit !== empresa.nit_generico &&
-                                    <option value={f.nit}>{f.nit} · Regla</option>}
+                                  {otros.map((n) => <option key={n} value={n}>{n} · {n === empresa.tercero_interno ? 'Tercero interno' : 'Regla'}</option>)}
                                   {terceros.map((t) => <option key={t.id} value={t.nit}>{t.nombre} · {t.nit}</option>)}
                                 </select>
                                 {sinTercero && !creando && (
@@ -280,20 +310,20 @@ export default function Generador() {
       {secciones.length > 0 && (
         <div className="pie">
           <p className="total">
-            {secciones.length === 1 ? 'Un extracto' : `${secciones.length} extractos`} · {totales.recibos} recibos por ${pesos(totales.valor)}
-            {totales.sinIdentificar > 0 && <span className="pendiente-txt"> · {totales.sinIdentificar} sin identificar</span>}
+            {secciones.length === 1 ? 'Un extracto' : `${secciones.length} extractos`} · {totales.recibos} {totales.recibos === 1 ? doc.uno : doc.varios} por ${pesos(totales.valor)}
+            {totales.sinIdentificar > 0 && <span className={documento === 'RC' ? 'pendiente-txt' : ''}> · {totales.sinIdentificar} sin identificar</span>}
           </p>
           {totales.excluidas > 0 && (
             <button type="button" className="secundario" onClick={() => setVerExcluidos(!verExcluidos)}>
-              {verExcluidos ? 'Ocultar' : 'Mostrar'} {totales.excluidas} abonos que no van al RC
+              {verExcluidos ? 'Ocultar' : 'Mostrar'} {totales.excluidas} {doc.movimientos} que no van al {documento}
             </button>
           )}
           <label className="consecutivo">
-            <span>Primer recibo {empresa.prefijo_rc}</span>
-            <input value={consecutivo} inputMode="numeric" onChange={(e) => setConsecutivo(e.target.value.replace(/\D/g, ''))} />
+            <span>Primer {doc.uno} {empresa[doc.prefijo]}</span>
+            <input value={consecutivo} inputMode="numeric" onChange={(e) => setConsecutivos({ ...consecutivos, [documento]: e.target.value.replace(/\D/g, '') })} />
           </label>
           <button type="button" onClick={descargar} disabled={estado.cargando || !totales.recibos || !consecutivo}>
-            {conHoja.length > 1 ? `Descargar Excel con ${conHoja.length} hojas` : `Descargar ${conHoja[0]?.hoja || 'Excel'}.xlsx`}
+            {conHoja.length > 1 ? `Descargar ${documento} con ${conHoja.length} hojas` : `Descargar ${conHoja[0]?.hoja || 'Excel'}.xlsx`}
           </button>
         </div>
       )}

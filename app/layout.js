@@ -14,6 +14,7 @@ export default function RootLayout({ children }) {
       <body>
         <Navegacion />
         {children}
+        <footer className="actualizado">Última actualización: {process.env.ACTUALIZADO}</footer>
       </body>
     </html>
   );

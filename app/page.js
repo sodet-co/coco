@@ -4,8 +4,8 @@ export default function Inicio() {
   return (
     <main className="pagina">
       <header className="cabecera">
-        <h1>Recibos de caja para WorldOffice</h1>
-        <p>Elige la empresa, sube sus extractos del banco, revisa a quién corresponde cada abono y descarga un Excel con una hoja por extracto, listo para cargar.</p>
+        <h1>Recibos de caja y egresos para WorldOffice</h1>
+        <p>Elige la empresa, sube sus extractos del banco y revisa a quién corresponde cada abono y cada cargo. Descargas por separado el Excel de recibos de caja y el de comprobantes de egreso, cada uno con una hoja por extracto, listos para cargar.</p>
       </header>
       <Generador />
     </main>

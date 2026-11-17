@@ -1,18 +1,19 @@
 # coco
 
 Aplicación web interna de contabilidad (Colombia). Toma el extracto PDF de Bancolombia de una empresa,
-propone a qué tercero corresponde cada abono y genera el Excel de carga de **Recibos de Caja (RC)** para
-el software contable **WorldOffice**. Toda la interfaz, los nombres del código y los mensajes están en español.
+propone a qué tercero corresponde cada movimiento y genera, por separado, el Excel de carga de **Recibos de Caja (RC)**
+(abonos) y el de **Comprobantes de Egreso (CE)** (cargos) para el software contable **WorldOffice**. Toda la interfaz, los nombres del código y los mensajes están en español.
 
 Repositorio: https://github.com/sodet-co/coco (rama `main`).
 
 ## Stack y comandos
 
 - Next.js 15 (App Router) + React 19, JavaScript puro (sin TypeScript), ESM (`"type": "module"`).
-- Postgres con `pg` (SQL directo, sin ORM), `pdfjs-dist` para leer el PDF, `exceljs` para leer y escribir Excel.
+- Postgres en **InsForge** (proyecto `coco`, conexión directa como `postgres`) con `pg` (SQL directo, sin ORM), `pdfjs-dist` para leer el PDF, `exceljs` para leer y escribir Excel.
 - Alias de importación `@/` = raíz del proyecto. CSS en un solo archivo: `app/globals.css`.
 - `npm run dev` (http://localhost:3000), `npm run build`, `npm start`. No hay pruebas ni linter configurados.
-- `DATABASE_URL` va en `.env.local` (ignorado por git; `.env.example` es la plantilla).
+- `DATABASE_URL` va en `.env.local` (ignorado por git; `.env.example` es la plantilla); se obtiene con
+  `npx @insforge/cli db connection-string`. `.mcp.json` (MCP de InsForge, con la API key) también está ignorado.
 - Entorno: Windows, PowerShell.
 
 ## Flujo principal
@@ -26,23 +27,32 @@ Primero se elige la empresa y luego se suben uno o varios PDF; todos los extract
    renglones agrupando el texto por su altura (y) y valida la cadena de saldos y los totales contra el
    resumen del banco. Las diferencias no detienen el proceso: se devuelven en `errores` y se muestran en pantalla.
    La cuenta del extracto debe existir en `cuentas_bancarias` de esa empresa; si no, responde 422.
-2. **Proponer recibos** — `lib/motor.js` → `proponerRecibos`. Solo abonos (`valor > 0`). Para cada uno:
-   - Regla (`reglas_movimiento`, coincide si la descripción *empieza por* el patrón, menor `prioridad` gana):
-     `excluir` lo saca del RC; `asignar` fija NIT, cuenta o nota.
-   - Si no hay regla, extrae el nombre del pagador tras prefijos como `PAGO INTERBANC`, `TRANSF DE`, `PAGO QR`
-     y lo compara por prefijo contra el nombre y los alias de los terceros.
+2. **Proponer documentos** — `lib/motor.js`: `proponerRecibos` toma los abonos (`valor > 0`) para el RC y
+   `proponerEgresos` los cargos (`valor < 0`, con el valor en positivo) para el CE. La ruta devuelve
+   `propuestas: { RC, CE }` y `consecutivoSugerido: { RC, CE }`. Para cada movimiento:
+   - Regla (`reglas_movimiento`, coincide si la descripción *empieza por* el patrón, menor `prioridad` gana;
+     solo se miran las reglas de ese `documento`): `excluir` lo saca; `asignar` fija NIT, cuenta o nota.
+   - Solo CE: si la descripción empieza por `RETIRO ` es un retiro en efectivo → débito a `cta_caja` a nombre del
+     `tercero_interno`, con `nota_retiro`.
+   - Si no hay regla, extrae el nombre tras prefijos como `PAGO INTERBANC`, `TRANSF DE`, `PAGO QR` (RC) o
+     `PAGO PSE`, `PAGO APP`, `COMPRA EN` (CE) y lo compara por prefijo contra el nombre y los alias de los terceros.
    - Una sola coincidencia → `automatico` (cuenta de clientes). Varias → `ambiguo`. Ninguna → `por_identificar`
-     (NIT genérico, cuenta y nota de "por identificar").
-3. **Revisar** — `components/Generador.jsx`: una sección por extracto, ordenadas por periodo y número de cuenta.
+     (NIT genérico, cuenta y nota de "por identificar"). En el CE la contrapartida siempre es `cta_proveedores`
+     con `nota_proveedores`, y lo normal es que la mayoría quede con el NIT genérico.
+3. **Revisar** — `components/Generador.jsx`: un selector cambia entre recibos de caja y comprobantes de egreso
+   (cada extracto guarda `filas: { RC, CE }` y hay un consecutivo por documento); una sección por extracto, ordenadas por periodo y número de cuenta.
    La persona incluye o excluye abonos, cambia tercero, cuenta y nota, crea terceros sobre la marcha, quita
    extractos y ajusta el consecutivo inicial.
-4. **Descargar** — `POST /api/plantilla` (`{ empresaId, consecutivoInicial, extractos: [{ cuentaId, anio, mes, recibos }] }`)
-   → `lib/plantilla.js` arma un solo `.xlsx` con **una hoja por extracto** y el consecutivo corrido de una hoja a la
-   siguiente. Un extracto sin recibos incluidos no genera hoja. Cada hoja: 47 columnas, sin fórmulas, **primero todos
-   los débitos al banco y luego todos los créditos a la contrapartida**, con el mismo número de recibo en ambos renglones.
-   Los nombres salen de `lib/hojas.js`: `RC_<Mes><Año>`, y si hay dos cuentas del mismo mes se agregan los últimos
+4. **Descargar** — `POST /api/plantilla` (`{ empresaId, documento, consecutivoInicial, extractos: [{ cuentaId, anio, mes, recibos }] }`),
+   una llamada y un archivo por documento → `lib/plantilla.js` arma un `.xlsx` con **una hoja por extracto** y el consecutivo corrido de una hoja a la
+   siguiente. Un extracto sin recibos incluidos no genera hoja. Cada hoja va sin fórmulas, **primero todos
+   los débitos y luego todos los créditos**, con el mismo número de documento en ambos renglones. RC: 47 columnas,
+   débito al banco y crédito a la contrapartida. CE: débito a la contrapartida y crédito al banco, con las mismas
+   columnas menos `Recaudado por` y `Fecha Recaudo` (45; supuesto pendiente de confirmar contra la plantilla de
+   egresos de WorldOffice, se ajusta en `ENCABEZADOS_POR_DOCUMENTO`).
+   Los nombres salen de `lib/hojas.js`: `RC_<Mes><Año>` o `CE_<Mes><Año>`, y si hay dos cuentas del mismo mes se agregan los últimos
    4 dígitos de la cuenta (`RC_Marzo2026_4471`). En la misma transacción:
-   - `empresas.ultimo_consecutivo_rc = greatest(actual, último usado)`, para que regenerar el mismo mes no lo dispare.
+   - `empresas.ultimo_consecutivo_rc` (o `ultimo_consecutivo_ce`) `= greatest(actual, último usado)`, para que regenerar el mismo mes no lo dispare.
    - Si un tercero fue asignado a mano a un abono con nombre del banco, ese nombre se guarda como alias.
 
 ## Mapa del código
@@ -58,14 +68,17 @@ Primero se elige la empresa y luego se suben uno o varios PDF; todos los extract
 
 ## Base de datos
 
-El esquema (`01_esquema_empresas.sql`, mencionado en el README) **no está en el repositorio**. Tablas que usa el código:
+La base es la misma que usará la app móvil (otro repositorio). El esquema base está en `sql/01_esquema_empresas.sql`
+(ya incluye `02_egresos.sql`). Las tablas tienen RLS activo y sin políticas: la API pública de InsForge (anon/authenticated)
+no las ve; coco entra como `postgres` y no le afecta. Si la app móvil necesita una tabla, se le agregan políticas. Tablas que usa el código:
 
 - `empresas`: nombre, nit, prefijo_rc, tercero_interno, nit_generico, nota_identificado, nota_por_identificar,
-  cta_clientes, cta_por_identificar, ultimo_consecutivo_rc, activa.
+  cta_clientes, cta_por_identificar, ultimo_consecutivo_rc, activa; para egresos: prefijo_ce, ultimo_consecutivo_ce,
+  cta_proveedores, cta_caja, nota_proveedores, nota_retiro.
 - `cuentas_bancarias`: empresa_id, banco, tipo, numero, cta_contable.
 - `terceros`: empresa_id, nombre, nit, nit_alt — único por (empresa_id, nit).
 - `terceros_alias`: tercero_id, alias.
-- `reglas_movimiento`: empresa_id, patron, accion (`excluir` | `asignar`), nit, cta_contable, nota, prioridad.
+- `reglas_movimiento`: empresa_id, documento (`RC` | `CE`), patron, accion (`excluir` | `asignar`), nit, cta_contable, nota, prioridad.
 
 ## Reglas del dominio
 

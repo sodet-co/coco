@@ -1,7 +1,6 @@
 import { contextoEmpresa } from '@/lib/datos.js';
 import { leerExtractoBancolombia, ErrorExtracto } from '@/lib/extracto/bancolombia.js';
-import { proponerRecibos } from '@/lib/motor.js';
-import { nombreHoja } from '@/lib/hojas.js';
+import { proponerRecibos, proponerEgresos } from '@/lib/motor.js';
 import { manejar } from '@/lib/api.js';
 
 export const runtime = 'nodejs';
@@ -28,13 +27,13 @@ export const POST = manejar(async (req) => {
     return Response.json({ error: `La cuenta ${extracto.numeroCuenta} del extracto no está registrada para ${ctx.empresa.nombre}. Agrégala en Empresas → Cuentas bancarias.` }, { status: 422 });
   }
 
+  // Los abonos van a recibos de caja (RC) y los cargos a comprobantes de egreso (CE)
   return Response.json({
     empresa: ctx.empresa,
     cuenta,
     terceros: ctx.terceros,
     extracto: { ...extracto, movimientos: undefined, cantidadMovimientos: extracto.movimientos.length },
-    hoja: nombreHoja(extracto.anio, extracto.mes),
-    propuestas: proponerRecibos(extracto.movimientos, ctx),
-    consecutivoSugerido: ctx.empresa.ultimo_consecutivo_rc + 1,
+    propuestas: { RC: proponerRecibos(extracto.movimientos, ctx), CE: proponerEgresos(extracto.movimientos, ctx) },
+    consecutivoSugerido: { RC: ctx.empresa.ultimo_consecutivo_rc + 1, CE: ctx.empresa.ultimo_consecutivo_ce + 1 },
   });
 });

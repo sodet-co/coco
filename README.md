@@ -1,17 +1,17 @@
-# coco · Recibos de caja para WorldOffice
+# coco · Recibos de caja y egresos para WorldOffice
 
 Se elige la empresa y se suben uno o varios extractos PDF de Bancolombia (los abre con el NIT de la empresa).
-Propone el tercero de cada abono y genera un Excel de carga de Recibos de Caja para WorldOffice con una hoja
-por extracto. Funciona en computador y en celular.
+Propone el tercero de cada abono y de cada cargo y genera, por separado, el Excel de carga de Recibos de Caja
+y el de Comprobantes de Egreso para WorldOffice, cada uno con una hoja por extracto. Funciona en computador y en celular.
 
 ## Puesta en marcha (Windows / PowerShell)
 
-1. Copia `.env.example` como `.env.local` y ajusta `DATABASE_URL` a tu Postgres local.
+1. Copia `.env.example` como `.env.local` y pon en `DATABASE_URL` la cadena de InsForge (`npx @insforge/cli db connection-string`).
 2. `npm install`
 3. `npm run dev`
 4. Abre http://localhost:3000
 
-La base debe tener el esquema de `01_esquema_empresas.sql`.
+La base vive en InsForge y ya tiene el esquema. Para una base nueva y vacía basta con `sql/01_esquema_empresas.sql`.
 
 ## Estructura
 
@@ -25,5 +25,5 @@ La base debe tener el esquema de `01_esquema_empresas.sql`.
 
 ## Qué guarda en la base al descargar
 
-- `empresas.ultimo_consecutivo_rc` sube al último número usado (si generas otra vez el mismo mes no se dispara).
+- `empresas.ultimo_consecutivo_rc` (o `ultimo_consecutivo_ce`, según el documento) sube al último número usado (si generas otra vez el mismo mes no se dispara).
 - Si asignas a mano un tercero a un abono que trae nombre del banco, ese nombre queda como alias para los meses siguientes.

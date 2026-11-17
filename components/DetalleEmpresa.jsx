@@ -28,12 +28,12 @@ export default function DetalleEmpresa({ id }) {
         <h1>{d.empresa.nombre}</h1>
         {faltantes.length
           ? <p className="pendiente-txt">Para leer extractos de esta empresa falta {faltantes.join(' y ')}.</p>
-          : <p>Lista para leer extractos. NIT {d.empresa.nit}, prefijo {d.empresa.prefijo_rc}, próximo recibo {d.empresa.ultimo_consecutivo_rc + 1}.</p>}
+          : <p>Lista para leer extractos. NIT {d.empresa.nit}, próximo recibo {d.empresa.prefijo_rc} {d.empresa.ultimo_consecutivo_rc + 1}, próximo egreso {d.empresa.prefijo_ce} {d.empresa.ultimo_consecutivo_ce + 1}.</p>}
       </header>
 
       <section className="bloque">
         <h2>Datos contables</h2>
-        <FormEmpresa key={d.empresa.id + d.empresa.ultimo_consecutivo_rc} inicial={d.empresa} conEstado textoBoton="Guardar cambios"
+        <FormEmpresa key={`${d.empresa.id}-${d.empresa.ultimo_consecutivo_rc}-${d.empresa.ultimo_consecutivo_ce}`} inicial={d.empresa} conEstado textoBoton="Guardar cambios"
           alGuardar={async (datos) => { await api(`/api/empresas/${id}`, { metodo: 'PUT', cuerpo: datos }); await recargar(); }} />
       </section>
 

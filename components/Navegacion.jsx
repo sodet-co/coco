@@ -9,7 +9,7 @@ export default function Navegacion() {
     <nav className="nav">
       <div className="nav-interior">
         <Link href="/" className="marca"><img src="/coco-palabra.svg" alt="coco" width="86" height="26" /></Link>
-        <Link href="/" className={activo('/') ? 'activo' : ''}>Recibos de caja</Link>
+        <Link href="/" className={activo('/') ? 'activo' : ''}>Recibos y egresos</Link>
         <Link href="/empresas" className={activo('/empresas') ? 'activo' : ''}>Empresas</Link>
       </div>
     </nav>

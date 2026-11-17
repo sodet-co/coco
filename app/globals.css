@@ -56,6 +56,13 @@ button.enlace.peligro { color: var(--rojo); }
 .extracto-cab h2::before, .bloque h2::before { content: ''; flex: none; display: inline-block; width: 16px; height: 16px; margin-right: 9px; border-radius: 50%;
   background: var(--marca); box-shadow: inset 0 0 0 3px var(--marca), inset 0 0 0 5px #fff; vertical-align: -2px; }
 
+/* Selector del documento que se revisa: recibos de caja o comprobantes de egreso */
+.documentos { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-top: 28px; padding: 4px; background: var(--blanco); border: 1px solid var(--linea); border-radius: 999px; }
+.documentos button { background: none; color: var(--tinta); }
+.documentos button:hover:not(:disabled) { background: var(--papel); }
+.documentos button.activo, .documentos button.activo:hover { background: var(--marca); color: #fff; }
+.documentos + .extracto { margin-top: 20px; }
+
 /* Un bloque por extracto leído */
 .extracto { margin-top: 36px; }
 .extracto-cab { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; margin-bottom: 12px; }
@@ -104,6 +111,7 @@ input.nota { width: 180px; }
 .nav a:not(.marca) { color: var(--tenue); text-decoration: none; padding: 7px 14px; border-radius: 999px; font-weight: 500; white-space: nowrap; transition: background .15s, color .15s; }
 .nav a:not(.marca):hover { color: var(--marca); background: var(--papel); }
 .nav a.activo, .nav a.activo:hover { color: var(--marca); background: var(--marca-claro); }
+.actualizado { max-width: 1240px; margin: 0 auto; padding: 8px 24px 28px; color: var(--tenue); font-size: 12.5px; }
 
 a { color: var(--marca); }
 .volver { font-size: 14px; display: inline-block; margin-bottom: 8px; text-decoration: none; }

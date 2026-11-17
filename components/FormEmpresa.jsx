@@ -5,6 +5,8 @@ export const EMPRESA_VACIA = {
   nombre: '', nit: '', prefijo_rc: '', tercero_interno: '', ultimo_consecutivo_rc: 0,
   cta_clientes: '13050501', cta_por_identificar: '13050520', nit_generico: '999999999',
   nota_identificado: 'Clientes-Pagos', nota_por_identificar: 'Pagos por Identificar', activa: true,
+  prefijo_ce: '', ultimo_consecutivo_ce: 0, cta_proveedores: '22050101', cta_caja: '11050501',
+  nota_proveedores: 'Proveedores-Pagos', nota_retiro: 'Retiro de efectivo',
 };
 
 const CAMPOS = [
@@ -18,6 +20,12 @@ const CAMPOS = [
   ['nit_generico', 'NIT genérico', 'Tercero para pagos sin identificar', 'num'],
   ['nota_identificado', 'Nota para identificados', 'Columnas Nota del RC'],
   ['nota_por_identificar', 'Nota para no identificados', 'Columnas Nota del RC'],
+  ['prefijo_ce', 'Prefijo de comprobantes de egreso', 'Si lo dejas vacío usa el de los recibos'],
+  ['ultimo_consecutivo_ce', 'Último egreso usado', 'El próximo CE arranca en este número + 1', 'num'],
+  ['cta_proveedores', 'Cuenta de proveedores', 'Débito de los pagos que salen del banco', 'num'],
+  ['cta_caja', 'Cuenta de caja', 'Débito de los retiros en efectivo, a nombre del tercero interno', 'num'],
+  ['nota_proveedores', 'Nota para pagos', 'Columnas Nota del CE'],
+  ['nota_retiro', 'Nota para retiros', 'Columnas Nota del CE'],
 ];
 
 export default function FormEmpresa({ inicial, alGuardar, textoBoton, conEstado }) {
@@ -29,7 +37,7 @@ export default function FormEmpresa({ inicial, alGuardar, textoBoton, conEstado 
     ev.preventDefault();
     setEstado({ guardando: true, error: '', ok: '' });
     try {
-      await alGuardar({ ...datos, ultimo_consecutivo_rc: Number(datos.ultimo_consecutivo_rc) });
+      await alGuardar({ ...datos, ultimo_consecutivo_rc: Number(datos.ultimo_consecutivo_rc), ultimo_consecutivo_ce: Number(datos.ultimo_consecutivo_ce) });
       setEstado({ guardando: false, error: '', ok: 'Cambios guardados.' });
     } catch (e) {
       setEstado({ guardando: false, error: e.message, ok: '' });
@@ -49,7 +57,7 @@ export default function FormEmpresa({ inicial, alGuardar, textoBoton, conEstado 
       {conEstado && (
         <label className="check">
           <input type="checkbox" checked={datos.activa} onChange={(e) => cambiar('activa', e.target.checked)} />
-          Empresa activa (aparece en Recibos de caja)
+          Empresa activa (aparece en Recibos y egresos)
         </label>
       )}
       <div className="acciones ancho">
