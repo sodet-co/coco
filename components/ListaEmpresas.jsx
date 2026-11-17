@@ -15,7 +15,7 @@ export default function ListaEmpresas() {
 
   async function crear(datos) {
     const e = await api('/api/empresas', { metodo: 'POST', cuerpo: datos });
-    router.push(`/empresas/${e.id}`);
+    router.push(`/herramientas/empresas/${e.id}`);
   }
 
   return (
@@ -40,7 +40,7 @@ export default function ListaEmpresas() {
               {empresas.length === 0 && <tr><td colSpan={7} className="vacio">Aún no hay empresas. Crea la primera con el botón de arriba.</td></tr>}
               {empresas.map((e) => (
                 <tr key={e.id}>
-                  <td className="desc"><Link href={`/empresas/${e.id}`}>{e.nombre}</Link></td>
+                  <td className="desc"><Link href={`/herramientas/empresas/${e.id}`}>{e.nombre}</Link></td>
                   <td data-label="NIT" className="fecha">{e.nit}</td>
                   <td data-label="Prefijo">{e.prefijo_rc}</td>
                   <td data-label="Último RC" className="num">{e.ultimo_consecutivo_rc}</td>

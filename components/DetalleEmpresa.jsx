@@ -24,7 +24,7 @@ export default function DetalleEmpresa({ id }) {
   return (
     <>
       <header className="cabecera">
-        <Link href="/empresas" className="volver">Empresas</Link>
+        <Link href="/herramientas/empresas" className="volver">Empresas</Link>
         <h1>{d.empresa.nombre}</h1>
         {faltantes.length
           ? <p className="pendiente-txt">Para leer extractos de esta empresa falta {faltantes.join(' y ')}.</p>

@@ -13,8 +13,8 @@ export default function Navegacion() {
         <Link href="/" className="marca"><img src="/coco-palabra.svg" alt="coco" width="86" height="26" /></Link>
         {!enLogin && (
           <>
-            <Link href="/" className={activo('/') ? 'activo' : ''}>Recibos y egresos</Link>
-            <Link href="/empresas" className={activo('/empresas') ? 'activo' : ''}>Empresas</Link>
+            <Link href="/" className={activo('/') ? 'activo' : ''}>Inicio</Link>
+            <Link href="/herramientas" className={activo('/herramientas') ? 'activo' : ''}>Herramientas</Link>
             <form action={cerrarSesion} className="salir">
               <button type="submit" className="secundario">Salir</button>
             </form>

@@ -77,7 +77,10 @@ Primero se elige la empresa y luego se suben uno o varios PDF; todos los extract
 - `lib/api.js`: `manejar(fn)` envuelve cada handler y traduce errores (`ErrorDatos`, códigos de Postgres) a JSON `{ error }`.
 - `lib/cliente.js`: `api()` para llamar la API desde el navegador y `limpiarNit()`.
 - `app/api/*`: rutas REST (empresas, cuentas, terceros, alias, reglas, extracto, plantilla). Usan `runtime = 'nodejs'`.
-- `app/page.js`: generador. `app/empresas`: listado y detalle de empresa (datos contables, cuentas, terceros, reglas).
+- `app/page.js`: inicio (dashboard). Mostrará lo que registra la app móvil `coco-movil` (otro repositorio, misma base);
+  mientras sus datos no estén definidos, solo tiene un estado vacío y los accesos a las herramientas.
+- Módulo **Herramientas** (`app/herramientas`, lista en `lib/herramientas.js`): `recibos-egresos` (generador) y
+  `empresas` (listado y detalle: datos contables, cuentas, terceros, reglas). `next.config.js` redirige las rutas viejas `/empresas…`.
 - `components/ImportarTerceros.jsx`: importación masiva de terceros desde `.xlsx`, adivinando las columnas de nombre y NIT.
 
 ## Base de datos

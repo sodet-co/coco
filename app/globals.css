@@ -111,6 +111,17 @@ input.nota { width: 180px; }
 .nav a:not(.marca) { color: var(--tenue); text-decoration: none; padding: 7px 14px; border-radius: 999px; font-weight: 500; white-space: nowrap; transition: background .15s, color .15s; }
 .nav a:not(.marca):hover { color: var(--marca); background: var(--papel); }
 .nav a.activo, .nav a.activo:hover { color: var(--marca); background: var(--marca-claro); }
+/* Tarjetas de módulos (inicio y herramientas) */
+.modulos { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 14px; }
+.modulo { display: grid; gap: 6px; background: var(--blanco); border: 1px solid var(--linea); border-radius: var(--radio); padding: 20px;
+  box-shadow: var(--sombra); text-decoration: none; color: var(--tinta); transition: border-color .15s, background .15s; }
+.modulo:hover { border-color: var(--marca); background: var(--marca-claro); }
+.modulo strong { color: var(--marca); font-size: 17px; font-weight: 600; }
+.modulo span { color: var(--tenue); font-size: 14px; }
+.vacio { margin-top: 14px; background: var(--blanco); border: 1px dashed var(--linea); border-radius: var(--radio); padding: 24px 20px; }
+.vacio p { margin: 0; }
+.vacio .ayuda { margin: 4px 0 0; }
+
 .salir { margin-left: auto; }
 .salir button { padding: 6px 16px; }
 
