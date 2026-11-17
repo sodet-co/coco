@@ -25,9 +25,22 @@ export async function middleware(peticion) {
   }
 
   const { pathname, search } = peticion.nextUrl;
-  const respuesta = NextResponse.next({ request: peticion });
-  const { accessToken } = await updateSession({ requestCookies: peticion.cookies, responseCookies: respuesta.cookies });
+  // Primero una respuesta solo para recoger las cookies renovadas
+  const conCookies = NextResponse.next();
+  const { accessToken } = await updateSession({ requestCookies: peticion.cookies, responseCookies: conCookies.cookies });
   const usuario = await usuarioValido(accessToken);
+
+  // El servidor sabe quién es el usuario por estos encabezados, que solo pone el middleware tras verificar
+  // la firma (lib/usuario.js). Los que vengan del navegador se descartan.
+  const encabezados = new Headers(peticion.headers);
+  encabezados.delete('x-coco-usuario');
+  encabezados.delete('x-coco-email');
+  if (usuario) {
+    encabezados.set('x-coco-usuario', usuario.sub);
+    encabezados.set('x-coco-email', usuario.email ?? '');
+  }
+  const respuesta = NextResponse.next({ request: { headers: encabezados } });
+  for (const cookie of conCookies.cookies.getAll()) respuesta.cookies.set(cookie);
 
   if (pathname === '/login') {
     return usuario ? NextResponse.redirect(new URL('/', peticion.url)) : respuesta;

@@ -118,9 +118,32 @@ input.nota { width: 180px; }
 .modulo:hover { border-color: var(--marca); background: var(--marca-claro); }
 .modulo strong { color: var(--marca); font-size: 17px; font-weight: 600; }
 .modulo span { color: var(--tenue); font-size: 14px; }
-.vacio { margin-top: 14px; background: var(--blanco); border: 1px dashed var(--linea); border-radius: var(--radio); padding: 24px 20px; }
-.vacio p { margin: 0; }
-.vacio .ayuda { margin: 4px 0 0; }
+div.vacio { margin-top: 14px; background: var(--blanco); border: 1px dashed var(--linea); border-radius: var(--radio); padding: 24px 20px; }
+div.vacio p { margin: 0; }
+div.vacio .ayuda { margin: 4px 0 0; }
+
+/* Árbol de categorías */
+.arbol { margin-top: 14px; background: var(--blanco); border: 1px solid var(--linea); border-radius: var(--radio); padding: 16px 20px; box-shadow: var(--sombra); }
+.arbol ul { list-style: none; margin: 0; padding-left: 22px; border-left: 1px solid var(--linea); }
+.arbol-tipo + .arbol-tipo { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--linea); }
+.arbol-tipo-nombre { display: block; font-size: 12.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--tenue); margin-bottom: 6px; }
+.arbol-tipo > ul { padding-left: 0; border-left: 0; }
+.nodo { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 5px 0; }
+.nodo-nombre { font-weight: 500; }
+.nodo-dato { font-size: 13px; color: var(--marca); background: var(--marca-claro); border-radius: 999px; padding: 1px 9px; font-variant-numeric: tabular-nums; }
+.nodo-dato.heredado { color: var(--tenue); background: var(--papel); }
+.nodo-acciones { display: inline-flex; gap: 12px; margin-left: auto; }
+.arbol .fila-form { margin: 4px 0 10px; }
+.casilla { display: inline-flex; align-items: center; gap: 6px; min-height: 38px; }
+
+/* Resumen del inicio */
+.entidades-resumen { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin-top: 14px; }
+.entidad-resumen { background: var(--blanco); border: 1px solid var(--linea); border-radius: var(--radio); padding: 18px 20px; box-shadow: var(--sombra); }
+.entidad-resumen h3 { margin: 0; font-size: 17px; font-weight: 600; color: var(--marca); }
+.entidad-resumen dl { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; margin: 12px 0 0; }
+.entidad-resumen dt { color: var(--tenue); }
+.entidad-resumen dd { margin: 0; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+.entidad-resumen .negativo { color: var(--rojo); }
 
 .salir { margin-left: auto; }
 .salir button { padding: 6px 16px; }

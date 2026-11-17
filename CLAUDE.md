@@ -20,7 +20,13 @@ Repositorio: https://github.com/sodet-co/coco (rama `main`).
 ## Inicio de sesión
 
 - Usuarios de InsForge Auth (correo y clave). El registro público está cerrado: los usuarios se crean en el panel
-  de InsForge (Authentication → Users). Todo usuario que entra ve todo; no hay roles.
+  de InsForge (Authentication → Users).
+- Quién ve qué: el inicio muestra solo las entidades asignadas al usuario (`entidad_usuarios`). **Herramientas** (y
+  toda `app/api/*`) es solo para quienes están en `administradores`: `manejar(fn)` llama a `exigirAdmin()` salvo
+  `manejar(fn, { soloAdmin: false })`, y `app/herramientas/layout.js` hace lo mismo en las páginas. Los
+  administradores se agregan por SQL (`insert into administradores (usuario_id) …`).
+- El servidor sabe quién es el usuario por `x-coco-usuario` / `x-coco-email`, que solo pone el middleware después de
+  verificar la firma (borra los que manda el navegador). Leerlos con `usuarioActual()` de `lib/usuario.js`.
 - `middleware.js` protege todo menos `/login` y los estáticos: renueva la sesión con `updateSession`
   (`@insforge/sdk/ssr/middleware`) y verifica la firma RS256 del token contra `/.well-known/jwks.json` del proyecto
   con `jose`, exigiendo `role = authenticated`. Sin sesión, las páginas van a `/login?siguiente=…` y la API responde 401;
@@ -77,17 +83,36 @@ Primero se elige la empresa y luego se suben uno o varios PDF; todos los extract
 - `lib/api.js`: `manejar(fn)` envuelve cada handler y traduce errores (`ErrorDatos`, códigos de Postgres) a JSON `{ error }`.
 - `lib/cliente.js`: `api()` para llamar la API desde el navegador y `limpiarNit()`.
 - `app/api/*`: rutas REST (empresas, cuentas, terceros, alias, reglas, extracto, plantilla). Usan `runtime = 'nodejs'`.
-- `app/page.js`: inicio (dashboard). Mostrará lo que registra la app móvil `coco-movil` (otro repositorio, misma base);
-  mientras sus datos no estén definidos, solo tiene un estado vacío y los accesos a las herramientas.
-- Módulo **Herramientas** (`app/herramientas`, lista en `lib/herramientas.js`): `recibos-egresos` (generador) y
-  `empresas` (listado y detalle: datos contables, cuentas, terceros, reglas). `next.config.js` redirige las rutas viejas `/empresas…`.
+- `app/page.js`: inicio (dashboard) con lo que registra la app móvil `coco-movil` (`C:\LS\coco-movil`, otro repositorio,
+  misma base): ingresos, gastos y resultado del mes por entidad y los últimos registros (`resumenParaUsuario`).
+- Módulo **Herramientas** (`app/herramientas`, lista en `lib/herramientas.js`): `entidades` (empresas y personas de la
+  app móvil: datos, accesos y árbol de categorías — `lib/entidades.js`, `components/ArbolCategorias.jsx`),
+  `recibos-egresos` (generador) y `empresas` (las de WorldOffice: datos contables, cuentas, terceros, reglas).
+  `next.config.js` redirige las rutas viejas `/empresas…`.
+- `lib/usuario.js`: `usuarioActual()`, `esAdmin()`, `exigirAdmin()`.
 - `components/ImportarTerceros.jsx`: importación masiva de terceros desde `.xlsx`, adivinando las columnas de nombre y NIT.
 
 ## Base de datos
 
-La base es la misma que usará la app móvil (otro repositorio). El esquema base está en `sql/01_esquema_empresas.sql`
-(ya incluye `02_egresos.sql`). Las tablas tienen RLS activo y sin políticas: la API pública de InsForge (anon/authenticated)
-no las ve; coco entra como `postgres` y no le afecta. Si la app móvil necesita una tabla, se le agregan políticas. Tablas que usa el código:
+Todos los cambios de la base (de la web o de la app móvil) van numerados en `sql/`. El esquema base está en
+`sql/01_esquema_empresas.sql` (ya incluye `02_egresos.sql`); `03_app_movil.sql` crea lo de la app móvil y
+`04_luis_florez.sql` los datos iniciales de Luis Florez. coco entra como `postgres` y salta RLS.
+
+**App móvil** (`03_app_movil.sql`, con RLS: cada usuario solo ve las entidades que tiene en `entidad_usuarios`, vía
+`tiene_acceso(entidad)`; anon no ve nada; no hay delete, se marca `borrado`):
+
+- `entidades`: tipo (`empresa` | `persona`), nombre, documento, activa. Al crearla, un trigger le pone las raíces
+  Ingresos, Gastos, Inventarios y Activos.
+- `entidad_usuarios`: entidad_id, usuario_id (auth.users). `administradores`: usuario_id (coco web).
+- `categorias`: árbol por entidad (padre_id), tipo heredado de la raíz (`ingreso` | `gasto` | `inventario` | `activo`),
+  cuenta_contable y naturaleza (`debito` | `credito`) opcionales: en null se heredan; la raíz por defecto es crédito
+  en ingresos y débito en lo demás. Llaves compuestas obligan a que padre e hijo sean de la misma entidad y tipo.
+- `movimientos`: entidad, categoría (misma entidad y tipo, por llave compuesta), fecha, valor, sentido
+  (`entrada` | `salida`, solo inventarios y activos), cantidad, unidad, descripción, tercero, cuenta_contable y naturaleza.
+- Todas llevan `actualizado_en` (trigger, hora del servidor) para la sincronización y `creado_por` que no cambia.
+- Pendiente: semovientes (sección de inventarios) se diseña después.
+
+**Herramientas contables** (RLS activo y sin políticas: la API pública no las ve):
 
 - `empresas`: nombre, nit, prefijo_rc, tercero_interno, nit_generico, nota_identificado, nota_por_identificar,
   cta_clientes, cta_por_identificar, ultimo_consecutivo_rc, activa; para egresos: prefijo_ce, ultimo_consecutivo_ce,
